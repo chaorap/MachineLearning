@@ -44,6 +44,9 @@ while 1>0:
         break
     
 print(W, B)
+for i in range(0, Size-1):
+    ModelOutput = W*Xtrain[i] + B
+    print(Ytrain[i], ModelOutput, (ModelOutput-Ytrain[i])/Ytrain[i])
 
 Xtest = np.arange(-2, 2, 0.001)
 Ytest = W*Xtest + B
