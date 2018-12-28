@@ -75,7 +75,14 @@ def DisplayLoadedMNISTPicture(PictureNumber, IsTrain=True):
         plt.imshow(img)
         plt.show()
 
+def sigmod(z, derivative=False):
+    sigmoid = 1.0/(1.0+np.exp(-z))
+    if (derivative==True):
+        return sigmoid * (1-sigmoid)
+    return sigmoid
+
 if __name__ == "__main__":
     if Load_MNIST_DataSet(Xtrain, Ytrain, Xtest, Ytest, 500):
         DisplayLoadedMNISTPicture(0, True)
         DisplayLoadedMNISTPicture(1, False)
+
