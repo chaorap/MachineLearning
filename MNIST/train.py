@@ -9,17 +9,34 @@ FileName_TrainingLabel = "train-labels.idx1-ubyte"
 FileName_TestingImage = "t10k-images.idx3-ubyte"
 FileName_TestingLabel = "t10k-labels.idx1-ubyte"
 
-PreDefine_TrainingNumber = 60000
-PreDefine_TestNumber = 10000
+PreDefine_TrainingNumber = 1000 #60000
+PreDefine_TestNumber = 1000		#10000
+PreDefine_LearnRate = 0.001
 
-Xtrain = np.zeros(shape=(PreDefine_TrainingNumber, 28*28))
-Ytrain = np.zeros(shape=(PreDefine_TrainingNumber, 10))
+Xtrain = np.zeros(shape=(PreDefine_TrainingNumber, 28*28), dtype="float")
+Ytrain = np.zeros(shape=(PreDefine_TrainingNumber, 10), dtype="float")
 
-Xtest = np.zeros(shape=(PreDefine_TestNumber, 28*28))
-Ytest = np.zeros(shape=(PreDefine_TestNumber, 10))
+Xtest = np.zeros(shape=(PreDefine_TestNumber, 28*28), dtype="float")
+Ytest = np.zeros(shape=(PreDefine_TestNumber, 10), dtype="float")
+
+W1 = np.random.rand(28*28, 15)
+B1 = np.random.rand(1, 15)
+W2 = np.random.rand(15, 10)
+B2 = np.random.rand(1, 10)
+
+# H1 = sigmod(X * W1 + B1)
+# Y  = sigmod(H1* W2 + B2)
+
+#np.savetxt("a.txt", B1, fmt="%f", delimiter=",")
+#np.loadtxt("a.txt",delimiter=",")
 
 def Load_MNIST_DataSet(Xtrain, Ytrain, Xtest, Ytest, limitNumber):
-    for filename in ["train-images.idx3-ubyte",  "train-labels.idx1-ubyte",  "t10k-images.idx3-ubyte",   "t10k-labels.idx1-ubyte"]:
+    for filename in [
+                    "train-images.idx3-ubyte",  
+                     "train-labels.idx1-ubyte",  
+                     #"t10k-images.idx3-ubyte",   
+                     #"t10k-labels.idx1-ubyte"
+                     ]:
         try:
             f = open(filename, "rb")
             TrainMagic = struct.unpack(">i", f.read(4))[0]
@@ -81,8 +98,104 @@ def sigmod(z, derivative=False):
         return sigmoid * (1-sigmoid)
     return sigmoid
 
+def CalcError():
+    SumError = 0
+    for i in range(0, PreDefine_TrainingNumber):
+        H1 = sigmod(np.dot(Xtrain[i], W1) + B1)
+        Y =  sigmod(np.dot(H1, W2) + B2)
+        E0 = np.square(np.abs(Y - Ytrain[i]))
+        SumError += E0
+    return SumError
+
+def Div(para):
+    ds_temp = 0
+    for i in range(0, PreDefine_TrainingNumber):
+        H1 = sigmod(np.dot(Xtrain[i], W1) + B1)
+
+        a1 = sigmod(np.dot(H1,W2) + B2) - Ytrain[i]
+        a2 = sigmod((np.dot(H1,W2) + B2), True)
+
+        #QiuDao = 2 * np.dot(a1, a2)
+        QiuDao = 2 * a1 * a2
+
+        if para == "W2":
+            ds_temp += 2 * np.dot(np.transpose(QiuDao), H1)
+        elif para == "B2":
+            ds_temp += 2 * QiuDao
+        elif para == "W1":
+            ds_temp += 2 * np.dot(np.dot(QiuDao, W2), Xtrain[i])
+        elif para == "B1":
+            ds_temp += 2 * QiuDao * W2
+    return ds_temp
+
 if __name__ == "__main__":
-    if Load_MNIST_DataSet(Xtrain, Ytrain, Xtest, Ytest, 500):
-        DisplayLoadedMNISTPicture(0, True)
-        DisplayLoadedMNISTPicture(1, False)
+
+    if Load_MNIST_DataSet(Xtrain, Ytrain, Xtest, Ytest, PreDefine_TrainingNumber):
+        #DisplayLoadedMNISTPicture(0, True)
+        #DisplayLoadedMNISTPicture(1, False)
+
+        for i in range(0, PreDefine_TrainingNumber):
+
+            OldError = np.zeros(shape=(1,10))
+            NewError = np.zeros(shape=(1,10))
+
+            while 1>0:
+                H1 = sigmod(np.dot(Xtrain[i], W1) + B1) # 1x15      need T
+                H2 = sigmod(np.dot(H1, W2) + B2)        # 1x10      need T
+
+                DaoShuSquare = np.abs(Ytrain[i] - H2)   # 1x10      need T
+                DaoshuSigmodH2 = sigmod(H2, True)       # 1x10      need T
+                DaoshuSigmodH1 = sigmod(H1, True)       # 1x10      need T
+
+                DaoShuH2 = DaoShuSquare * DaoshuSigmodH2    # 1x10      need T
+                DaoShu1 = np.dot(DaoShuH2.T, H1)            # 1x10      need T
+
+                W2_Delta = DaoShuH2.T.dot(H1).T
+                B2_Delta = DaoShuH2
+
+                W1_Delta = DaoShuH2.dot(W2.T)               # 1x15
+                W1_Delta = Xtrain[i].reshape(1, 28*28).T.dot(W1_Delta)         # 784x15
+
+                B1_Delta = DaoShuH2.dot(W2.T)               # 1x15
+
+                W2 -= PreDefine_LearnRate * W2_Delta
+                B2 -= PreDefine_LearnRate * B2_Delta
+                W1 -= PreDefine_LearnRate * W1_Delta
+                B1 -= PreDefine_LearnRate * B1_Delta
+
+                OldError = NewError
+                NewError = H2_Error = np.abs(Ytrain[i] - H2)       # 1x10      need T
+                #NewError = H2_Error = Ytrain[i] - H2       # 1x10      need T
+                print(i, Ytrain[i], H2_Error, end='\r')
+
+                if abs((NewError - OldError).mean()) < 0.00001:
+                    break;
+
+        print("Finished !!!")
+        np.savetxt("W1.txt", W1, fmt="%f", delimiter=",")
+        np.savetxt("B1.txt", B1, fmt="%f", delimiter=",")
+        np.savetxt("W2.txt", W2, fmt="%f", delimiter=",")
+        np.savetxt("B2.txt", B2, fmt="%f", delimiter=",")
+
+        #while 1>0:
+            
+            #for i in range(0, PreDefine_TrainingNumber):
+            #    H1 = sigmod(np.dot(Xtrain[i], W1) + B1)
+            #    H2 = sigmod(np.dot(H1, W2) + B2)
+
+            #    H2_Error = np.square(np.abs(Ytrain[i] - H2)) / 2
+            #    temp = np.abs(Ytrain[i] - H2) * sigmod((np.dot(H1, W2) + B2), True)
+            #    temp1 =np.transpose([temp])
+            #    H2_Error_Div_W2 = np.dot(temp1, H1)
+
+            #W2 -= PreDefine_LearnRate*Div("W2")
+            #W1 -= PreDefine_LearnRate*Div("W1")
+            #B1 -= PreDefine_LearnRate*Div("B1")
+            #B2 -= PreDefine_LearnRate*Div("B2")
+
+            #OldError = NewError
+            #NewError = CalcError()
+
+            #print(NewError)
+
 
