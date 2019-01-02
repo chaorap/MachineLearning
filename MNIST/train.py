@@ -9,7 +9,7 @@ FileName_TrainingLabel = "train-labels.idx1-ubyte"
 FileName_TestingImage = "t10k-images.idx3-ubyte"
 FileName_TestingLabel = "t10k-labels.idx1-ubyte"
 
-PreDefine_Mode  = "Test" # Test
+PreDefine_Mode  = "Train" # Test
 PreDefine_TrainingNumber = 60000 #60000
 PreDefine_TestNumber = 10000     #10000
 PreDefine_LearnRate = 0.01
