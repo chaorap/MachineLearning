@@ -9,7 +9,7 @@ FileName_TrainingLabel = "train-labels.idx1-ubyte"
 FileName_TestingImage = "t10k-images.idx3-ubyte"
 FileName_TestingLabel = "t10k-labels.idx1-ubyte"
 
-PreDefine_Mode  = "Train" # Test
+PreDefine_Mode  = "Test" # Test
 PreDefine_TrainingNumber = 60000 #60000
 PreDefine_TestNumber = 10000     #10000
 PreDefine_LearnRate = 0.01
@@ -156,6 +156,8 @@ if __name__ == "__main__":
                 B1 = np.loadtxt("B1.txt", dtype='float', delimiter=",")
 
                 #Step 2. Use the model to predict the result and Verify
+                CorrectNumber = 0
+                FailedNumber = 0
                 for i in range(0, PreDefine_TestNumber):
                     t0 = np.dot(Xtest[i], W1)
                     t1 = t0 + B1
@@ -171,9 +173,11 @@ if __name__ == "__main__":
                     PredictResult = CalcualteLabelValue(H2)
                     if(CorrectResult == PredictResult):
                         ResultString = "OK"
+                        CorrectNumber += 1
                     else:
                         ResultString = "Fail"
-                    print(i, ResultString, CorrectResult, PredictResult)
+                        FailedNumber += 1
+                    print(i, ResultString, CorrectResult, PredictResult, CorrectNumber, FailedNumber, CorrectNumber/PreDefine_TestNumber)
             except:
                 print("Cannot find the Trained Model Parameter files")
 
