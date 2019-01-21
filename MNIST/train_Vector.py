@@ -94,22 +94,59 @@ def sigmod(z, derivative=False):
 def LeakyRelu(z, derivative=False):
     LeakyRate = 0.01
     if derivative == False:
-        return max(0, z) + LeakyRate*min(0,z)
+        return np.maximum(z, 0.0)
     else:
-        if z>=0:
-            return 1
-        else: 
-            return LeakyRate
+        return np.minimum(-LeakyRate*z, 0.0)
 
 def CalcualteLabelValue(y):
     for i in range(0, 10):
         if y[i] >= 0.7:
             return i
 
-if __name__ == "__main__":
-    #Load_MNIST_DataSet(100,100,False)
-    #DisplayLoadedMNISTPicture(58,False)
+def TrainMNIST():
+    if True == Load_MNIST_DataSet(100,100,IsTrain=True):
 
+        for i in range(1, 10000):
+            #FP
+            Z1 = np.dot(W1, Xtrain) + B1
+            A1 = LeakyRelu(Z1)
+
+            Z2 = np.dot(W2, A1) + B2
+            A2 = sigmod(Z2)
+
+            J = A2 - Ytrain
+            L = np.sum(J, axis=1, keepdims=True)/PreDefine_TrainingNumber
+
+            #BP
+            dZ2 = J
+            dW2 = np.dot(dZ2, A1.T)/PreDefine_TrainingNumber
+            dB2 = np.sum(dZ2, axis=1, keepdims=True)
+
+            dA1 = np.dot(W2.T, dZ2)
+            dZ1 = np.dot(dA1, LeakyRelu(dZ1, True))
+            dW1 = np.dot(dZ1, A1.T)/PreDefine_TrainingNumber
+            dB1 = np.sum(dZ1, axis=1, keepdims=True)
+
+            #Update Para
+            W2 = W2 - PreDefine_LearnRate * dW2
+            B2 = B2 - PreDefine_LearnRate * dB2
+            W1 = W1 - PreDefine_LearnRate * dW1
+            B2 = B2 - PreDefine_LearnRate * dB2
+
+            print(J)
+
+def TestMNIST():
+    if True == Load_MNIST_DataSet(100,100,IsTrain=False):
+        retrurn
+
+
+if __name__ == "__main__":
+    #Verify Loaded data
+    #Load_MNIST_DataSet(100,100,IsTrain=False)
+    #DisplayLoadedMNISTPicture(58,IsTrain=False)
+
+    TrainMNIST()
+    #TestMNIST()
 
 
 
