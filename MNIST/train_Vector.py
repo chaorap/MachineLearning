@@ -3,13 +3,11 @@ import struct
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
+import datetime
 
-PreDefine_Mode  = "Train"
-PreDefine_MNIST_Number  = 60000
-
-PreDefine_TrainingNumber = 60000
+PreDefine_TrainingNumber = 500
 PreDefine_TestNumber = 10000
-PreDefine_LearnRate = 0.01
+PreDefine_LearnRate = 0.0000000001
 
 Xtrain = np.zeros(shape=(28*28, PreDefine_TrainingNumber), dtype=float)
 Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
@@ -22,9 +20,10 @@ B1 = np.random.rand(15, 1)
 W2 = np.random.rand(10, 15)
 B2 = np.random.rand(10, 1)
 
-def Load_MNIST_DataSet(LimitTrainNumber, LimitTestNumber, IsTrain=True):
+def Load_MNIST_DataSet(LimitNumber, IsTrain=True):
+    global Xtrain, Ytrain, Xtest, Ytest
 
-    if IsTrain == "Train":
+    if IsTrain == True:
         MNIST_Files = ["train-images.idx3-ubyte", "train-labels.idx1-ubyte"]
     else:
         MNIST_Files = ["t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte"]
@@ -39,16 +38,16 @@ def Load_MNIST_DataSet(LimitTrainNumber, LimitTestNumber, IsTrain=True):
                 RowNumber = struct.unpack(">i", f.read(4))[0]
                 ColNumber = struct.unpack(">i", f.read(4))[0]
 
-                for i in range(0, LimitTrainNumber):
-                    print("%s - %d/%d" %(filename, i+1, LimitTrainNumber))
+                for i in range(0, LimitNumber):
+                    print("%s - %d/%d" %(filename, i+1, LimitNumber))
                     for j in range(0, RowNumber * ColNumber):
                         if "train" in filename:
                             Xtrain[j][i] = struct.unpack("B", f.read(1))[0]
                         else:
                             Xtest[j][i] = struct.unpack("B", f.read(1))[0]
             else:
-                for i in range(0, LimitTestNumber):
-                    print("%s - %d/%d" % (filename, i+1, LimitTestNumber))
+                for i in range(0, LimitNumber):
+                    print("%s - %d/%d" % (filename, i+1, LimitNumber))
                     if "train" in filename:
                         Ytrain[struct.unpack("B", f.read(1))[0]][i] = 1;
                     else:
@@ -59,6 +58,7 @@ def Load_MNIST_DataSet(LimitTrainNumber, LimitTestNumber, IsTrain=True):
     return True
 
 def DisplayLoadedMNISTPicture(PictureNumber, IsTrain=True):
+    global Xtrain, Ytrain, Xtest, Ytest
     img = np.zeros(shape=(28,28))
     label = -100
     for i in range(0, 28):
@@ -86,27 +86,36 @@ def DisplayLoadedMNISTPicture(PictureNumber, IsTrain=True):
         plt.show()
 
 def sigmod(z, derivative=False):
-    sigmoid = 1.0/(1.0+np.exp(-z))
+    sigmoid = np.nan_to_num(1.0/(1.0+np.exp(-z)))
     if (derivative==True):
         return sigmoid * (1-sigmoid)
     return sigmoid
 
 def LeakyRelu(z, derivative=False):
-    LeakyRate = 0.01
+    LeakyRate = 0.1
     if derivative == False:
-        return np.maximum(z, 0.0)
+        return np.where(z < 0, LeakyRate*z, z)
     else:
-        return np.minimum(-LeakyRate*z, 0.0)
+        return np.where(z < 0, LeakyRate, 1)
 
 def CalcualteLabelValue(y):
     for i in range(0, 10):
         if y[i] >= 0.7:
             return i
 
-def TrainMNIST():
-    if True == Load_MNIST_DataSet(100,100,IsTrain=True):
+def CalculateCrossEnt(a, y):
+    return np.nan_to_num(-(y*np.log(a) + (1-y)*np.log(1-a)))
 
-        for i in range(1, 10000):
+def TrainMNIST(inTrainNumber):
+    global Xtrain, Ytrain, Xtest, Ytest
+    global W1, B1, W2, B2
+
+    if True == Load_MNIST_DataSet(inTrainNumber,IsTrain=True):
+
+        Allstarttime = datetime.datetime.now()
+
+        for i in range(1, 100000):
+            Onestarttime = datetime.datetime.now()
             #FP
             Z1 = np.dot(W1, Xtrain) + B1
             A1 = LeakyRelu(Z1)
@@ -114,39 +123,51 @@ def TrainMNIST():
             Z2 = np.dot(W2, A1) + B2
             A2 = sigmod(Z2)
 
-            J = A2 - Ytrain
-            L = np.sum(J, axis=1, keepdims=True)/PreDefine_TrainingNumber
+            J = CalculateCrossEnt(A2, Ytrain)
+            L = np.sum(J, axis=1, keepdims=True)/inTrainNumber
 
             #BP
-            dZ2 = J
-            dW2 = np.dot(dZ2, A1.T)/PreDefine_TrainingNumber
-            dB2 = np.sum(dZ2, axis=1, keepdims=True)
+            dZ2 = A2 - Ytrain
+            dW2 = np.dot(dZ2, A1.T)/inTrainNumber
+            dB2 = np.sum(dZ2, axis=1, keepdims=True)/inTrainNumber
 
             dA1 = np.dot(W2.T, dZ2)
-            dZ1 = np.dot(dA1, LeakyRelu(dZ1, True))
-            dW1 = np.dot(dZ1, A1.T)/PreDefine_TrainingNumber
-            dB1 = np.sum(dZ1, axis=1, keepdims=True)
+            dZ1 = dA1
+            dZ1 = dA1 * LeakyRelu(dZ1, True)
+            dW1 = np.dot(dZ1, Xtrain.T)/inTrainNumber
+            dB1 = np.sum(dZ1, axis=1, keepdims=True)/inTrainNumber
 
-            #Update Para
+            #Update Parameter
             W2 = W2 - PreDefine_LearnRate * dW2
             B2 = B2 - PreDefine_LearnRate * dB2
             W1 = W1 - PreDefine_LearnRate * dW1
             B2 = B2 - PreDefine_LearnRate * dB2
 
-            print(J)
+            endtime = datetime.datetime.now()
+            os.system('cls')
+            print(L, "\n", i, "\n", endtime-Onestarttime, "\n", endtime-Allstarttime)
 
-def TestMNIST():
-    if True == Load_MNIST_DataSet(100,100,IsTrain=False):
+            if np.max(L) == 0:
+                break;
+        
+        print("Finished !!!")
+        np.savetxt("W1.txt", W1, fmt="%f", delimiter=",")
+        np.savetxt("B1.txt", B1, fmt="%f", delimiter=",")
+        np.savetxt("W2.txt", W2, fmt="%f", delimiter=",")
+        np.savetxt("B2.txt", B2, fmt="%f", delimiter=",")
+
+def TestMNIST(inTestNumber):
+    if True == Load_MNIST_DataSet(inTestNumber,IsTrain=False):
         retrurn
 
 
 if __name__ == "__main__":
     #Verify Loaded data
-    #Load_MNIST_DataSet(100,100,IsTrain=False)
-    #DisplayLoadedMNISTPicture(58,IsTrain=False)
+    #Load_MNIST_DataSet(100,IsTrain=True)
+    #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
-    TrainMNIST()
-    #TestMNIST()
+    TrainMNIST(PreDefine_TrainingNumber)
+    #TestMNIST(PreDefine_TestNumber)
 
 
 
