@@ -5,9 +5,9 @@ from PIL import Image
 import os
 import datetime
 
-PreDefine_TrainingNumber = 500
+PreDefine_TrainingNumber = 60000
 PreDefine_TestNumber = 10000
-PreDefine_LearnRate = 0.0000000001
+PreDefine_LearnRate = 0.01
 
 Xtrain = np.zeros(shape=(28*28, PreDefine_TrainingNumber), dtype=float)
 Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
@@ -110,45 +110,56 @@ def TrainMNIST(inTrainNumber):
     global Xtrain, Ytrain, Xtest, Ytest
     global W1, B1, W2, B2
 
+    OneXtrain = np.zeros(shape=(28*28, 1), dtype=float)
+    OneYtrain = np.zeros(shape=(10, 1), dtype=float)
+
     if True == Load_MNIST_DataSet(inTrainNumber,IsTrain=True):
 
         Allstarttime = datetime.datetime.now()
 
-        for i in range(1, 100000):
-            Onestarttime = datetime.datetime.now()
-            #FP
-            Z1 = np.dot(W1, Xtrain) + B1
-            A1 = LeakyRelu(Z1)
+        for itera in range(0, 1000):
+            OneIteraStartTime = datetime.datetime.now()
+            for j in range(0, inTrainNumber):
+                Onestarttime = datetime.datetime.now()
 
-            Z2 = np.dot(W2, A1) + B2
-            A2 = sigmod(Z2)
+                OneXtrain[:,0] = Xtrain[:,j]
+                OneYtrain[:,0] = Ytrain[:,j]
 
-            J = CalculateCrossEnt(A2, Ytrain)
-            L = np.sum(J, axis=1, keepdims=True)/inTrainNumber
+                #FP
+                Z1 = np.dot(W1, OneXtrain) + B1
+                A1 = LeakyRelu(Z1)
 
-            #BP
-            dZ2 = A2 - Ytrain
-            dW2 = np.dot(dZ2, A1.T)/inTrainNumber
-            dB2 = np.sum(dZ2, axis=1, keepdims=True)/inTrainNumber
+                Z2 = np.dot(W2, A1) + B2
+                A2 = sigmod(Z2)
 
-            dA1 = np.dot(W2.T, dZ2)
-            dZ1 = dA1
-            dZ1 = dA1 * LeakyRelu(dZ1, True)
-            dW1 = np.dot(dZ1, Xtrain.T)/inTrainNumber
-            dB1 = np.sum(dZ1, axis=1, keepdims=True)/inTrainNumber
+                J = CalculateCrossEnt(A2, OneYtrain)
+                L = np.sum(J, axis=1, keepdims=True)
 
-            #Update Parameter
-            W2 = W2 - PreDefine_LearnRate * dW2
-            B2 = B2 - PreDefine_LearnRate * dB2
-            W1 = W1 - PreDefine_LearnRate * dW1
-            B2 = B2 - PreDefine_LearnRate * dB2
+                #BP
+                dZ2 = A2 - OneYtrain
+                dW2 = np.dot(dZ2, A1.T)
+                dB2 = np.sum(dZ2, axis=1, keepdims=True)
 
-            endtime = datetime.datetime.now()
-            os.system('cls')
-            print(L, "\n", i, "\n", endtime-Onestarttime, "\n", endtime-Allstarttime)
+                dA1 = np.dot(W2.T, dZ2)
+                dZ1 = dA1
+                dZ1 = dA1 * LeakyRelu(dZ1, True)
+                dW1 = np.dot(dZ1, OneXtrain.T)
+                dB1 = np.sum(dZ1, axis=1, keepdims=True)
 
-            if np.max(L) == 0:
-                break;
+                #Update Parameter
+                W2 = W2 - PreDefine_LearnRate * dW2
+                B2 = B2 - PreDefine_LearnRate * dB2
+                W1 = W1 - PreDefine_LearnRate * dW1
+                B2 = B2 - PreDefine_LearnRate * dB2
+
+                endtime = datetime.datetime.now()
+                os.system('cls')
+                print(L, "\n", 
+                      itera, "\n", 
+                      j, "\n", 
+                      endtime-Onestarttime, "\n", 
+                      endtime-OneIteraStartTime, "\n",
+                      endtime-Allstarttime)
         
         print("Finished !!!")
         np.savetxt("W1.txt", W1, fmt="%f", delimiter=",")
