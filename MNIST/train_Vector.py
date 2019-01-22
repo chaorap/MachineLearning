@@ -5,9 +5,13 @@ from PIL import Image
 import os
 import datetime
 
-PreDefine_TrainingNumber = 60000
+PreDefine_IterationNumber = 1000
+PreDefine_MiniBatchNumber = 10
+
+PreDefine_TrainingNumber = 5000
 PreDefine_TestNumber = 10000
-PreDefine_LearnRate = 0.01
+
+PreDefine_LearnRate = 0.000001
 
 Xtrain = np.zeros(shape=(28*28, PreDefine_TrainingNumber), dtype=float)
 Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
@@ -15,10 +19,10 @@ Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
 Xtest = np.zeros(shape=(28*28, PreDefine_TestNumber), dtype=float)
 Ytest = np.zeros(shape=(10, PreDefine_TestNumber), dtype=float)
 
-W1 = np.random.rand(15, 28*28)
-B1 = np.random.rand(15, 1)
-W2 = np.random.rand(10, 15)
-B2 = np.random.rand(10, 1)
+W1 = np.random.rand(15, 28*28)/1000
+B1 = np.random.rand(15, 1)/1000
+W2 = np.random.rand(10, 15)/1000
+B2 = np.random.rand(10, 1)/1000
 
 def Load_MNIST_DataSet(LimitNumber, IsTrain=True):
     global Xtrain, Ytrain, Xtest, Ytest
@@ -104,26 +108,26 @@ def CalcualteLabelValue(y):
             return i
 
 def CalculateCrossEnt(a, y):
-    return np.nan_to_num(-(y*np.log(a) + (1-y)*np.log(1-a)))
+    return np.nan_to_num(-(y*np.log(a+1e-10) + (1-y)*np.log(1-a+1e-10)))
 
 def TrainMNIST(inTrainNumber):
     global Xtrain, Ytrain, Xtest, Ytest
     global W1, B1, W2, B2
 
-    OneXtrain = np.zeros(shape=(28*28, 1), dtype=float)
-    OneYtrain = np.zeros(shape=(10, 1), dtype=float)
+    OneXtrain = np.zeros(shape=(28*28, PreDefine_MiniBatchNumber), dtype=float)
+    OneYtrain = np.zeros(shape=(10, PreDefine_MiniBatchNumber), dtype=float)
 
     if True == Load_MNIST_DataSet(inTrainNumber,IsTrain=True):
 
         Allstarttime = datetime.datetime.now()
 
-        for itera in range(0, 1000):
+        for itera in range(0, PreDefine_IterationNumber):
             OneIteraStartTime = datetime.datetime.now()
-            for j in range(0, inTrainNumber):
+            for j in range(0, inTrainNumber, PreDefine_MiniBatchNumber):
                 Onestarttime = datetime.datetime.now()
 
-                OneXtrain[:,0] = Xtrain[:,j]
-                OneYtrain[:,0] = Ytrain[:,j]
+                OneXtrain[:,0:PreDefine_MiniBatchNumber] = Xtrain[:,j:j+PreDefine_MiniBatchNumber]
+                OneYtrain[:,0:PreDefine_MiniBatchNumber] = Ytrain[:,j:j+PreDefine_MiniBatchNumber]
 
                 #FP
                 Z1 = np.dot(W1, OneXtrain) + B1
@@ -133,18 +137,18 @@ def TrainMNIST(inTrainNumber):
                 A2 = sigmod(Z2)
 
                 J = CalculateCrossEnt(A2, OneYtrain)
-                L = np.sum(J, axis=1, keepdims=True)
+                L = np.sum(J, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 #BP
                 dZ2 = A2 - OneYtrain
-                dW2 = np.dot(dZ2, A1.T)
-                dB2 = np.sum(dZ2, axis=1, keepdims=True)
+                dW2 = np.dot(dZ2, A1.T)/PreDefine_MiniBatchNumber
+                dB2 = np.sum(dZ2, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 dA1 = np.dot(W2.T, dZ2)
                 dZ1 = dA1
                 dZ1 = dA1 * LeakyRelu(dZ1, True)
-                dW1 = np.dot(dZ1, OneXtrain.T)
-                dB1 = np.sum(dZ1, axis=1, keepdims=True)
+                dW1 = np.dot(dZ1, OneXtrain.T)/PreDefine_MiniBatchNumber
+                dB1 = np.sum(dZ1, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 #Update Parameter
                 W2 = W2 - PreDefine_LearnRate * dW2
@@ -173,12 +177,14 @@ def TestMNIST(inTestNumber):
 
 
 if __name__ == "__main__":
+    np.set_printoptions(suppress=True)
+    np.set_printoptions(precision=20)
     #Verify Loaded data
     #Load_MNIST_DataSet(100,IsTrain=True)
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
     TrainMNIST(PreDefine_TrainingNumber)
-    #TestMNIST(PreDefine_TestNumber)
+    TestMNIST(PreDefine_TestNumber)
 
 
 
