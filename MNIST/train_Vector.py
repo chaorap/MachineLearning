@@ -6,12 +6,13 @@ import os
 import datetime
 
 PreDefine_IterationNumber = 1000
-PreDefine_MiniBatchNumber = 10
+PreDefine_MiniBatchNumber = 500
 
 PreDefine_TrainingNumber = 5000
 PreDefine_TestNumber = 500
 
-PreDefine_LearnRate = 0.000001
+PreDefine_LearnRate = 0.00001
+#PreDefine_LearnRateDecayRate = 0.9
 
 Xtrain = np.zeros(shape=(28*28, PreDefine_TrainingNumber), dtype=float)
 Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
@@ -19,10 +20,10 @@ Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
 Xtest = np.zeros(shape=(28*28, PreDefine_TestNumber), dtype=float)
 Ytest = np.zeros(shape=(10, PreDefine_TestNumber), dtype=float)
 
-W1 = np.random.rand(15, 28*28)/1000
-B1 = np.random.rand(15, 1)/1000
-W2 = np.random.rand(10, 15)/1000
-B2 = np.random.rand(10, 1)/1000
+W1 = np.random.rand(15, 28*28)*np.sqrt(2/(28*28))/1000
+B1 = np.random.rand(15, 1)*np.sqrt(2/(28*28))/1000
+W2 = np.random.rand(10, 15)*np.sqrt(2/(15))/1000
+B2 = np.random.rand(10, 1)*np.sqrt(2/(15))/1000
 
 def Load_MNIST_DataSet(LimitNumber, IsTrain=True):
     global Xtrain, Ytrain, Xtest, Ytest
@@ -95,10 +96,10 @@ def sigmod(z, derivative=False):
         return sigmoid * (1-sigmoid)
     return sigmoid
 
-def softmax(x):
-    shift_x = x - np.max(x)
-    exp_x = np.exp(shift_x)
-    return exp_x / np.sum(exp_x)
+def softmax(z):
+    t = np.exp(z)
+    sumt = np.sum(t, axis=0, keepdims=True)
+    return z/sumt
 
 def LeakyRelu(z, derivative=False):
     LeakyRate = 0.1
@@ -139,10 +140,11 @@ def TrainMNIST(inTrainNumber):
                 A1 = LeakyRelu(Z1)
 
                 Z2 = np.dot(W2, A1) + B2
-                A2 = sigmod(Z2)
+                A2 = softmax(Z2)
 
-                J = CalculateCrossEnt(A2, OneYtrain)
-                L = np.sum(J, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
+                L0 = OneYtrain * np.log(A2 + 1e-10)
+                L = -np.sum(L0, axis=0, keepdims=True)
+                J = np.sum(L, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 #BP
                 dZ2 = A2 - OneYtrain
@@ -163,7 +165,7 @@ def TrainMNIST(inTrainNumber):
 
                 endtime = datetime.datetime.now()
                 os.system('cls')
-                print(L, "\n", 
+                print(J, "\n", 
                       itera, "\n", 
                       j, "\n", 
                       endtime-Onestarttime, "\n", 
@@ -200,7 +202,7 @@ def TestMNIST(inTestNumber):
             A1 = LeakyRelu(Z1)
 
             Z2 = np.dot(W2, A1) + B2
-            A2 = sigmod(Z2)
+            A2 = softmax(Z2)
 
             CorrectResult = CalcualteLabelValue(OneYtest)
             PredictResult = CalcualteLabelValue(A2)
@@ -222,8 +224,8 @@ if __name__ == "__main__":
     #Load_MNIST_DataSet(100,IsTrain=True)
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
-    #TrainMNIST(PreDefine_TrainingNumber)
-    TestMNIST(PreDefine_TestNumber)
+    TrainMNIST(PreDefine_TrainingNumber)
+    #TestMNIST(PreDefine_TestNumber)
 
 
 
