@@ -6,10 +6,10 @@ import os
 import datetime
 
 PreDefine_IterationNumber = 1000
-PreDefine_MiniBatchNumber = 60000
+PreDefine_MiniBatchNumber = 600
 
 PreDefine_TrainingNumber = 60000
-PreDefine_TestNumber = 500
+PreDefine_TestNumber = 600
 
 PreDefine_LearnRateInit = 0.0001
 PreDefine_LearnRate = PreDefine_LearnRateInit
@@ -105,7 +105,7 @@ def softmax(z):
 def LeakyRelu(z, derivative=False):
     LeakyRate = 0.1
     if derivative == False:
-        return np.where(z < 0, LeakyRate*z, z)
+        return np.where(z < 0, -LeakyRate*z, z)
     else:
         return np.where(z < 0, LeakyRate, 1)
 
@@ -128,6 +128,7 @@ def TrainMNIST(inTrainNumber):
 
         Allstarttime = datetime.datetime.now()
         itera = -1
+        OldValidJ = 10000000000000
         OldJ = 100000000000000
         PreDefine_LearnRate = PreDefine_LearnRateInit
         OldLearningRate = PreDefine_LearnRate
@@ -137,7 +138,8 @@ def TrainMNIST(inTrainNumber):
         OldB2 = B2
 
         #for itera in range(0, PreDefine_IterationNumber):
-        while True:
+        IsExit = False
+        while not IsExit:
             itera += 1
             OneIteraStartTime = datetime.datetime.now()
             for j in range(0, inTrainNumber, PreDefine_MiniBatchNumber):
@@ -158,44 +160,44 @@ def TrainMNIST(inTrainNumber):
 
                 J = np.sum(L, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
-                #BP
-                dZ2 = A2 - OneYtrain
-                dW2 = np.dot(dZ2, A1.T)/PreDefine_MiniBatchNumber
-                dB2 = np.sum(dZ2, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
-
-                dA1 = np.dot(W2.T, dZ2)
-                dZ1 = dA1
-                dZ1 = dA1 * LeakyRelu(dZ1, True)
-                dW1 = np.dot(dZ1, OneXtrain.T)/PreDefine_MiniBatchNumber
-                dB1 = np.sum(dZ1, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
-
-                #Update Parameter
-                OldW1 = W1
-                OldW2 = W2
-                OldB1 = B1
-                OldB2 = B2
-                W2 = W2 - PreDefine_LearnRate * dW2
-                B2 = B2 - PreDefine_LearnRate * dB2
-                W1 = W1 - PreDefine_LearnRate * dW1
-                B2 = B2 - PreDefine_LearnRate * dB2
-
                 if J > OldJ:
                     #PreDefine_LearnRate = (OldLearningRate + PreDefine_LearnRate)/2
                     PreDefine_LearnRate = PreDefine_LearnRate/2
+                    OldJ = OldValidJ
                     W1 = OldW1
                     W2 = OldW2
                     B1 = OldB1
                     B2 = OldB2
                 elif OldJ - J  <= 0.00000001:
-                    break;
+                    IsExit = True
                 else:
+                    OldValidJ = OldJ
                     OldJ = J
 
                     #OldLearningRate = PreDefine_LearnRate
                     #PreDefine_LearnRate = PreDefine_LearnRateInit/(1 + PreDefine_LearnRateDecayRate*itera)
                     #PreDefine_LearnRate *= 2
 
+                    #BP
+                    dZ2 = A2 - OneYtrain
+                    dW2 = np.dot(dZ2, A1.T)/PreDefine_MiniBatchNumber
+                    dB2 = np.sum(dZ2, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
+                    dA1 = np.dot(W2.T, dZ2)
+                    dZ1 = dA1
+                    dZ1 = dA1 * LeakyRelu(dZ1, True)
+                    dW1 = np.dot(dZ1, OneXtrain.T)/PreDefine_MiniBatchNumber
+                    dB1 = np.sum(dZ1, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
+
+                    #Update Parameter
+                    OldW1 = W1
+                    OldW2 = W2
+                    OldB1 = B1
+                    OldB2 = B2
+                    W2 = W2 - PreDefine_LearnRate * dW2
+                    B2 = B2 - PreDefine_LearnRate * dB2
+                    W1 = W1 - PreDefine_LearnRate * dW1
+                    B2 = B2 - PreDefine_LearnRate * dB2
 
                 endtime = datetime.datetime.now()
                 os.system('cls')
@@ -208,10 +210,10 @@ def TrainMNIST(inTrainNumber):
                         endtime-Allstarttime)
         
         print("Finished !!!")
-        np.savetxt("W1.txt", W1, fmt="%f", delimiter=",")
-        np.savetxt("B1.txt", B1, fmt="%f", delimiter=",")
-        np.savetxt("W2.txt", W2, fmt="%f", delimiter=",")
-        np.savetxt("B2.txt", B2, fmt="%f", delimiter=",")
+        np.savetxt("W1.txt", W1, fmt="%.20f", delimiter=",")
+        np.savetxt("B1.txt", B1, fmt="%.20f", delimiter=",")
+        np.savetxt("W2.txt", W2, fmt="%.20f", delimiter=",")
+        np.savetxt("B2.txt", B2, fmt="%.20f", delimiter=",")
 
 def TestMNIST(inTestNumber):
     global Xtrain, Ytrain, Xtest, Ytest
