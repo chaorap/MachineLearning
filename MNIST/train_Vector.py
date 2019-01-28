@@ -6,13 +6,14 @@ import os
 import datetime
 
 PreDefine_IterationNumber = 1000
-PreDefine_MiniBatchNumber = 500
+PreDefine_MiniBatchNumber = 60000
 
-PreDefine_TrainingNumber = 5000
+PreDefine_TrainingNumber = 60000
 PreDefine_TestNumber = 500
 
-PreDefine_LearnRate = 0.00001
-#PreDefine_LearnRateDecayRate = 0.9
+PreDefine_LearnRateInit = 0.0001
+PreDefine_LearnRate = PreDefine_LearnRateInit
+PreDefine_LearnRateDecayRate = 0.01
 
 Xtrain = np.zeros(shape=(28*28, PreDefine_TrainingNumber), dtype=float)
 Ytrain = np.zeros(shape=(10, PreDefine_TrainingNumber), dtype=float)
@@ -126,8 +127,18 @@ def TrainMNIST(inTrainNumber):
     if True == Load_MNIST_DataSet(inTrainNumber,IsTrain=True):
 
         Allstarttime = datetime.datetime.now()
+        itera = -1
+        OldJ = 100000000000000
+        PreDefine_LearnRate = PreDefine_LearnRateInit
+        OldLearningRate = PreDefine_LearnRate
+        OldW1 = W1
+        OldW2 = W2
+        OldB1 = B1
+        OldB2 = B2
 
-        for itera in range(0, PreDefine_IterationNumber):
+        #for itera in range(0, PreDefine_IterationNumber):
+        while True:
+            itera += 1
             OneIteraStartTime = datetime.datetime.now()
             for j in range(0, inTrainNumber, PreDefine_MiniBatchNumber):
                 Onestarttime = datetime.datetime.now()
@@ -144,6 +155,7 @@ def TrainMNIST(inTrainNumber):
 
                 L0 = OneYtrain * np.log(A2 + 1e-10)
                 L = -np.sum(L0, axis=0, keepdims=True)
+
                 J = np.sum(L, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 #BP
@@ -158,19 +170,42 @@ def TrainMNIST(inTrainNumber):
                 dB1 = np.sum(dZ1, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
                 #Update Parameter
+                OldW1 = W1
+                OldW2 = W2
+                OldB1 = B1
+                OldB2 = B2
                 W2 = W2 - PreDefine_LearnRate * dW2
                 B2 = B2 - PreDefine_LearnRate * dB2
                 W1 = W1 - PreDefine_LearnRate * dW1
                 B2 = B2 - PreDefine_LearnRate * dB2
 
+                if J > OldJ:
+                    #PreDefine_LearnRate = (OldLearningRate + PreDefine_LearnRate)/2
+                    PreDefine_LearnRate = PreDefine_LearnRate/2
+                    W1 = OldW1
+                    W2 = OldW2
+                    B1 = OldB1
+                    B2 = OldB2
+                elif OldJ - J  <= 0.00000001:
+                    break;
+                else:
+                    OldJ = J
+
+                    #OldLearningRate = PreDefine_LearnRate
+                    #PreDefine_LearnRate = PreDefine_LearnRateInit/(1 + PreDefine_LearnRateDecayRate*itera)
+                    #PreDefine_LearnRate *= 2
+
+
+
                 endtime = datetime.datetime.now()
                 os.system('cls')
-                print(J, "\n", 
-                      itera, "\n", 
-                      j, "\n", 
-                      endtime-Onestarttime, "\n", 
-                      endtime-OneIteraStartTime, "\n",
-                      endtime-Allstarttime)
+                print("Error: ", J, "\n", 
+                        "Itear: ", itera, "\n", 
+                        "LN: ", PreDefine_LearnRate, "\n",
+                        j, "\n", 
+                        endtime-Onestarttime, "\n", 
+                        endtime-OneIteraStartTime, "\n",
+                        endtime-Allstarttime)
         
         print("Finished !!!")
         np.savetxt("W1.txt", W1, fmt="%f", delimiter=",")
