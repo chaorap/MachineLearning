@@ -98,14 +98,15 @@ def sigmod(z, derivative=False):
     return sigmoid
 
 def softmax(z):
-    t = np.exp(z)
-    sumt = np.sum(t, axis=0, keepdims=True)
-    return z/sumt
+    maxz = np.max(z, axis=0, keepdims=True)
+    ez = np.exp(z-maxz)
+    sumez = np.sum(ez, axis=0, keepdims=True)
+    return (ez)/sumez
 
 def LeakyRelu(z, derivative=False):
-    LeakyRate = 0.1
+    LeakyRate = 0.01
     if derivative == False:
-        return np.where(z < 0, -LeakyRate*z, z)
+        return np.where(z < 0, LeakyRate*z, z)
     else:
         return np.where(z < 0, LeakyRate, 1)
 
@@ -183,7 +184,7 @@ def TrainMNIST(inTrainNumber):
                     dW2 = np.dot(dZ2, A1.T)/PreDefine_MiniBatchNumber
                     dB2 = np.sum(dZ2, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
-                    dA1 = np.dot(W2.T, dZ2)
+                    dA1 = np.dot(dW2.T, dZ2)
                     dZ1 = dA1
                     dZ1 = dA1 * LeakyRelu(dZ1, True)
                     dW1 = np.dot(dZ1, OneXtrain.T)/PreDefine_MiniBatchNumber
