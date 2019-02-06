@@ -184,9 +184,10 @@ def TrainMNIST(inTrainNumber):
                     dW2 = np.dot(dZ2, A1.T)/PreDefine_MiniBatchNumber
                     dB2 = np.sum(dZ2, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
-                    dA1 = np.dot(dW2.T, dZ2)
-                    dZ1 = dA1
-                    dZ1 = dA1 * LeakyRelu(dZ1, True)
+                    #dA1 = np.dot(W2.T, dZ2)
+                    #dZ1 = dA1
+                    #dZ1 = dA1 * LeakyRelu(A1, True)
+                    dZ1 = np.dot(W2.T, dZ2) * LeakyRelu(A1, True)
                     dW1 = np.dot(dZ1, OneXtrain.T)/PreDefine_MiniBatchNumber
                     dB1 = np.sum(dZ1, axis=1, keepdims=True)/PreDefine_MiniBatchNumber
 
@@ -216,14 +217,14 @@ def TrainMNIST(inTrainNumber):
         np.savetxt("W2.txt", W2, fmt="%.20f", delimiter=",")
         np.savetxt("B2.txt", B2, fmt="%.20f", delimiter=",")
 
-def TestMNIST(inTestNumber):
+def TestMNIST(inTestNumber, IsTrain=True):
     global Xtrain, Ytrain, Xtest, Ytest
     global W1, B1, W2, B2
 
     CorrectNumber = 0
     FailedNumber = 0
 
-    if True == Load_MNIST_DataSet(inTestNumber,IsTrain=True):
+    if True == Load_MNIST_DataSet(inTestNumber,IsTrain=IsTrain):
         #Step 1. Load trained parameter to Model
         W2 = np.loadtxt("W2.txt", dtype='float', delimiter=",")
         B2 = np.loadtxt("B2.txt", dtype='float', delimiter=",").reshape(10,1)
@@ -234,8 +235,12 @@ def TestMNIST(inTestNumber):
         OneYtest = np.zeros(shape=(10, 1), dtype=float)
 
         for i in range(0, inTestNumber):
-            OneXtest[:,0] = Xtrain[:,i]
-            OneYtest[:,0] = Ytrain[:,i]
+            if IsTrain == True:
+                OneXtest[:,0] = Xtrain[:,i]
+                OneYtest[:,0] = Ytrain[:,i]
+            else:
+                OneXtest[:,0] = Xtest[:,i]
+                OneYtest[:,0] = Ytest[:,i]
             Z1 = np.dot(W1, OneXtest) + B1
             A1 = LeakyRelu(Z1)
 
@@ -263,7 +268,7 @@ if __name__ == "__main__":
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
     TrainMNIST(PreDefine_TrainingNumber)
-    #TestMNIST(PreDefine_TestNumber)
+    #TestMNIST(PreDefine_TestNumber, IsTrain=True)
 
 
 
