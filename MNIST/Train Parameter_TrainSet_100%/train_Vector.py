@@ -6,12 +6,12 @@ import os
 import datetime
 
 PreDefine_IterationNumber = 1000
-PreDefine_MiniBatchNumber = 60000
+PreDefine_MiniBatchNumber = 600
 
 PreDefine_TrainingNumber = 60000
 PreDefine_TestNumber = 10000
 
-PreDefine_LearnRateInit = 0.1
+PreDefine_LearnRateInit = 0.01
 PreDefine_LearnRate = PreDefine_LearnRateInit
 PreDefine_LearnRateDecayRate = 0.01
 
@@ -163,7 +163,7 @@ def TrainMNIST(inTrainNumber):
 
                 if J > OldJ:
                     #PreDefine_LearnRate = (OldLearningRate + PreDefine_LearnRate)/2
-                    PreDefine_LearnRate = PreDefine_LearnRate*0.9
+                    PreDefine_LearnRate = PreDefine_LearnRate/2
                     OldJ = OldValidJ
                     W1 = OldW1
                     W2 = OldW2
@@ -255,7 +255,7 @@ def TestMNIST(inTestNumber, IsTrain=True):
             else:
                 ResultString = "Fail"
                 FailedNumber += 1
-            print(i, ResultString, CorrectResult, PredictResult, CorrectNumber, FailedNumber, CorrectNumber/inTestNumber)
+            print(i, ResultString, CorrectResult, PredictResult, CorrectNumber, FailedNumber, CorrectNumber/PreDefine_TestNumber)
 
             
 
@@ -267,8 +267,8 @@ if __name__ == "__main__":
     #Load_MNIST_DataSet(100,IsTrain=True)
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
-    #TrainMNIST(PreDefine_TrainingNumber)
-    TestMNIST(PreDefine_TestNumber, IsTrain=False)
+    TrainMNIST(PreDefine_TrainingNumber)
+    #TestMNIST(PreDefine_TestNumber, IsTrain=True)
 
 
 
