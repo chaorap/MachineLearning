@@ -11,6 +11,9 @@ PreDefine_MiniBatchNumber = 60000
 PreDefine_TrainingNumber = 60000
 PreDefine_TestNumber = 10000
 
+# 0 - Cancel L2
+PreDefine_L2Reg = 0 #PreDefine_TrainingNumber 
+
 PreDefine_LearnRateInit = 0.1
 PreDefine_LearnRate = PreDefine_LearnRateInit
 PreDefine_LearnRateDecayRate = 0.01
@@ -196,9 +199,10 @@ def TrainMNIST(inTrainNumber):
                     OldW2 = W2
                     OldB1 = B1
                     OldB2 = B2
-                    W2 = W2 - PreDefine_LearnRate * dW2
+                    L2RegPara = (1 - PreDefine_LearnRate*PreDefine_L2Reg/PreDefine_TrainingNumber)
+                    W2 = L2RegPara*W2 - PreDefine_LearnRate * dW2
                     B2 = B2 - PreDefine_LearnRate * dB2
-                    W1 = W1 - PreDefine_LearnRate * dW1
+                    W1 = L2RegPara*W1 - PreDefine_LearnRate * dW1
                     B2 = B2 - PreDefine_LearnRate * dB2
 
                 endtime = datetime.datetime.now()
@@ -267,8 +271,8 @@ if __name__ == "__main__":
     #Load_MNIST_DataSet(100,IsTrain=True)
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
-    #TrainMNIST(PreDefine_TrainingNumber)
-    TestMNIST(PreDefine_TestNumber, IsTrain=False)
+    TrainMNIST(PreDefine_TrainingNumber)
+    #TestMNIST(PreDefine_TestNumber, IsTrain=False)
 
 
 
