@@ -271,8 +271,8 @@ if __name__ == "__main__":
     #Load_MNIST_DataSet(100,IsTrain=True)
     #DisplayLoadedMNISTPicture(99,IsTrain=True)
 
-    TrainMNIST(PreDefine_TrainingNumber)
-    #TestMNIST(PreDefine_TestNumber, IsTrain=False)
+    #TrainMNIST(PreDefine_TrainingNumber)
+    TestMNIST(PreDefine_TestNumber, IsTrain=False)
 
 
 
