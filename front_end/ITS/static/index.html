@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Access-Control-Allow-Origin" content="*" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ABB Ability™ CMES</title>
+
+    <!-- Bootstrap -->
+    <link href="./bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./bootstrap-table-dist/bootstrap-table.min.css" rel="stylesheet">
+    <!-- <link href="./bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" rel="stylesheet"> -->
+    <link href="./daterangepicker-master/daterangepicker.css" rel="stylesheet">
+  </head>
+  <body>
+    <!-- <div class="alert alert-success" role="alert">ABB Ability™ CMES ITS(Intelligent temperature supervision) Demo</div> -->
+    
+    <div class="container">
+      <div class="jumbotron">
+        <h1>ITS Demo</h1>
+        <h2>Intelligent Temperature Supervision</h2>
+        <p>ABB Ability™ CMES</p>
+      </div>
+    </div>
+
+    <!-- <div class="page-header">
+      <div class="container">
+        <h1>ABB Ability™ CMES</h1>
+        <p>ITS (Intelligent Temperature Supervision) Demo</p>
+      </div>
+    </div> -->
+    <div class="container">
+    <ul class="nav nav-pills nav-justified" role="tablist">
+      <li role="presentation" class="active"><a href="#Train" aria-controls="Train" role="tab" data-toggle="tab">Model Training Selection</a></li>
+      <li role="presentation"><a href="#Status" aria-controls="Status" role="tab" data-toggle="tab">Model Status</a></li>
+      <li role="presentation"><a href="#Pred" aria-controls="Pred" role="tab" data-toggle="tab">Model Prediction</a></li>
+    </ul>
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane fade in active" id="Train">
+          <h3>Time Stamp for Model Training</h3>
+          <div id="reportrange" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+            <i class="fa fa-calendar"></i>&nbsp;
+            <span></span> <i class="fa fa-caret-down"></i>
+          </div>        
+          <h3>Power Modules for Model Training</h3>
+          <table class="table table-bordered table-hover" id="TT">
+          </table> 
+          <button type="button" class="btn btn-primary btn-lg" onclick="TrainOnClick()">Start Training</button>
+        </div>
+        <div role="tabpanel" class="tab-pane fade" id="Status">
+          <table class="table table-bordered table-hover" id="TS">
+        </div>
+        <div role="tabpanel" class="tab-pane fade" id="Pred">
+          <table class="table table-bordered table-hover" id="TP">
+          </table>
+        </div>
+    </div>
+  </div>
+
+  <script src="./jQuery-3.4.1-dist/jquery-3.4.1.min.js"></script>
+  <script src="./bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+  <script src="./bootstrap-table-dist/bootstrap-table.min.js"></script>
+  <script src="./bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.min.js"></script>
+  <Script src="./daterangepicker-master/moment.min.js"></Script>  
+  <script src="./daterangepicker-master/daterangepicker.js"></script>
+  <script>
+    // function myFunction(){
+    //   $.post("\a1",
+    //   {
+    //       name:"CYC",
+    //       no:1
+    //   },
+    //   function(data,status){
+    //       //alert("Name: \n" + data["a"] + "\nNo: " + status);
+    //       alert(data["a"] + "      " + data['b'] + "      " + data['c'])
+    //   });
+    //   };
+  
+
+        //????????
+        var Table_Train_Columns = [{
+            checkbox: true
+        }, {
+            field: 'PM-Name',
+            title: 'Power-Module Name'
+        }, {
+            field: 'PM-Path',
+            title: 'PowerModule Detail'
+        }, {
+            field: 'PM-Size',
+            title: 'Module Size'
+        },{
+            field: 'PM-Current',
+            title: 'Norminal Current (A)'
+        },{
+            field: 'PM-EnvSensor-Path',
+            title: 'Environment Sensor'
+        }, {          
+            field: 'PM-ContSensor-Path',
+            title: 'Contactor Sensor'
+        }];
+
+        //bootstrap table???
+        $('#TT').bootstrapTable({
+            columns: Table_Train_Columns,
+            method: "post",
+            url: "/ListPowerModule",
+            dataType: "json",
+            pagination: true,
+            search: true,    
+            clickToSelect: true,
+            showRefresh: true,  
+            //cardView :true, 
+            //showToggle:true,
+            // pagination : true,
+            // pageSize :20,
+            // striped: true,
+        });
+
+        var Table_Status_Columns = [{
+            field: 'ModelGuid',
+            title: 'Model GUID'
+        }, {
+            field: 'ModelDescription',
+            title: 'Model Description'
+        }, {
+            field: 'ModelStatus',
+            title: 'Model Status'
+        }];
+
+        //bootstrap table???
+        $('#TS').bootstrapTable({
+            columns: Table_Status_Columns,
+            method: "post",
+            url: "/ModelStatus",
+            dataType: "json",
+            pagination: true,
+            search: true,    
+            clickToSelect: true,
+            showRefresh: true,  
+            // cardView :true, 
+            // showToggle:true,
+        }); 
+
+        $(function() {
+          var start = moment().subtract(29, 'days');
+          var end = moment();
+          function cb(start, end) {
+              $('#reportrange span').html(start.format('YYYY-MM-DD hh:mm:ss') + '  -  ' + end.format('YYYY-MM-DD hh:mm:ss'));
+          }
+          $('#reportrange').daterangepicker({
+              showWeekNumbers:true,
+              timePicker:true,
+              alwaysShowCalendars: true,
+              timePickerIncrement:true,
+              timePickerSeconds: true,
+              timePicker24Hour:true,
+              showDropdowns:true,
+              startDate: start,
+              endDate: end,
+              ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+              }
+          }, cb);
+          cb(start, end);
+        });        
+
+        function TrainOnClick()
+        {
+          alert($('#reportrange span').html())
+        }
+
+    // function OnLoadTableTrain()
+    // {
+    //   //var tableobj =document.getElementById("TT");
+    //   console.debug("OnShow Table Train")
+    //   $.post("\ListPowerModule",{},
+    //   function(data,status){
+    //     alert("OnShow Table Train" + data)
+
+    //   },
+    //   function(){
+    //     alert("failed Status")
+    //   });
+    // }
+
+    // function OnShowTableStatus()
+    // {
+    //   console.debug("OnShow Table Status")
+    //   $.post("\ModelStatus",{},
+    //   function(data,status){
+    //     alert("OnShow Table Status" + data)
+    //   },
+    //   function(){
+    //     alert("failed Status")
+    //   });
+    // }    
+  </script>
+
+
+  </body>
+</html>
