@@ -77,8 +77,6 @@
     //   });
     //   };
   
-
-        //????????
         var Table_Train_Columns = [{
             checkbox: true
         }, {
@@ -101,7 +99,6 @@
             title: 'Contactor Sensor'
         }];
 
-        //bootstrap table???
         $('#TT').bootstrapTable({
             columns: Table_Train_Columns,
             method: "post",
@@ -129,7 +126,6 @@
             title: 'Model Status'
         }];
 
-        //bootstrap table???
         $('#TS').bootstrapTable({
             columns: Table_Status_Columns,
             method: "post",
@@ -173,7 +169,9 @@
 
         function TrainOnClick()
         {
-          alert($('#reportrange span').html())
+          console.debug($('#reportrange span').html())
+          var a= $("#TT").bootstrapTable('getSelections');
+          console.debug(a)
         }
 
     // function OnLoadTableTrain()
